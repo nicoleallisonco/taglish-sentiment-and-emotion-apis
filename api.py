@@ -30,8 +30,7 @@ def sentiment_preprocess(X_arr):
         X = X.lower()
         X = X.split()
         X = [word for word in X if not word in stop_words]
-        with importlib_resources.open_text("taglish_sentiment", "stopwords-tl.json") as file:
-            df_stop_words_tl = pd.read_json(file)
+        df_stop_words_tl = pd.read_json("stopwords-tl.json")
         stop_words_tl = df_stop_words_tl.iloc[:,0].tolist()
         X = [word for word in X if not word in stop_words_tl]
         X = [word for word in X if not re.match("(a)*(h)*(ha)+(a)*(h)*", word)]
@@ -135,8 +134,7 @@ def sentiment_new_features(X):
     return df_pos, df_cs, df_lang, df_affixes, df_adjectives
     
 def sentiment_tf_method(tweets):
-    tf_model = importlib_resources.read_binary("taglish_sentiment", "sentiment_tf.pkl")
-    tf_vectorizer = CountVectorizer(stop_words='english', vocabulary=pickle.loads(tf_model))
+    tf_vectorizer = CountVectorizer(stop_words='english', vocabulary=pickle.load(open("sentiment_tf.pkl", "rb")))
     tf = tf_vectorizer.fit_transform(tweets)
     tf_feature_names = tf_vectorizer.get_feature_names()
     return tf, tf_feature_names
@@ -147,8 +145,7 @@ def predict_sentiment(X):
     sentiment_tf, sentiment_tf_feature_names = sentiment_tf_method(X_processed)
     sentiment_tf = hstack((coo_matrix(sentiment_tf), coo_matrix(df_pos), coo_matrix(df_lang), coo_matrix(df_cs), coo_matrix(df_affixes), coo_matrix(df_adjectives)))
 
-    sentiment_model = importlib_resources.read_binary("taglish_sentiment", "sentiment_model.sav")
-    sentiment_loaded_model = pickle.loads(sentiment_model)
+    sentiment_loaded_model = pickle.load(open("sentiment_model.sav", "rb"))
     pred = sentiment_loaded_model.predict(sentiment_tf)
 
     return pred
@@ -162,8 +159,7 @@ def emotion_preprocess(X_arr):
         X = X.lower()
         X = X.split()
         X = [word for word in X if not word in stop_words]
-        with importlib_resources.open_text("taglish_sentiment", "stopwords-tl.json") as file:
-            df_stop_words_tl = pd.read_json(file)
+        df_stop_words_tl = pd.read_json("stopwords-tl.json")
         stop_words_tl = df_stop_words_tl.iloc[:,0].tolist()
         X = [word for word in X if not word in stop_words_tl]
         X = [word for word in X if not re.match("(a)*(h)*(ha)+(a)*(h)*", word)]
@@ -176,15 +172,13 @@ def emotion_preprocess(X_arr):
     return X_arr_2
     
 def emotion_tf_method(tweets):
-    tf_model = importlib_resources.read_binary("taglish_emotion", "emotion_tf.pkl")
-    tf_vectorizer = CountVectorizer(stop_words='english', vocabulary=pickle.loads(tf_model))
+    tf_vectorizer = CountVectorizer(stop_words='english', vocabulary=pickle.load(open("emotion_tf.pkl", "rb")))
     tf = tf_vectorizer.fit_transform(tweets)
     tf_feature_names = tf_vectorizer.get_feature_names()
     return tf, tf_feature_names
     
 def emotion_pca_method(X):
-  pca_model = importlib_resources.read_binary("taglish_emotion", "emotion_pca.pkl")
-  pca = pickle.loads(pca_model)
+  pca = pickle.load(open("emotion_pca.pkl", "rb"))
   emotion_tf_pca = pca.transform(X)
   return emotion_tf_pca
   
@@ -194,8 +188,7 @@ def predict_emotion(X):
     emotion_tf = normalize(emotion_tf)
     emotion_tf_pca = emotion_pca_method(emotion_tf.todense())
 
-    filepath = resource_filename('taglish_emotion', 'emotion_model.sav')
-    emotion_loaded_model = joblib.load(filepath)
+    emotion_loaded_model = joblib.load(open('emotion_model.sav', "rb"))
     pred = emotion_loaded_model.predict(emotion_tf_pca)
 
     return pred
